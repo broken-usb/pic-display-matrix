@@ -1,0 +1,130 @@
+name: Gerar Release Portatil
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Tag da Versão (ex: v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  # ==========================================
+  # 1. BUILD WINDOWS (Executável .exe com Ícone)
+  # ==========================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Instalar Dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt pyinstaller
+
+    - name: Compilar Executavel
+      run: |
+        pyinstaller --noconsole --onefile --collect-all customtkinter --icon="resources/icon.png" --name "LEDMatrixGenerator" main.py
+
+    - name: Empacotar (.zip)
+      shell: pwsh
+      run: |
+        Compress-Archive -Path dist\LEDMatrixGenerator.exe -DestinationPath LEDMatrixGenerator-Windows.zip
+
+    - name: Upload Windows Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: LEDMatrixGenerator-Windows.zip
+
+  # ==========================================
+  # 2. BUILD LINUX (Gera o .AppImage com Ícone)
+  # ==========================================
+  build-linux:
+    runs-on: ubuntu-22.04 
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Instalar Dependências do Sistema
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk libfuse2
+
+    - name: Instalar Dependências Python
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt pyinstaller
+
+    - name: Compilar Binario com PyInstaller
+      run: |
+        pyinstaller --noconsole --onefile --collect-all customtkinter --name "LEDMatrixGenerator" main.py
+
+    - name: Preparar AppDir para AppImage
+      run: |
+        mkdir -p AppDir/usr/bin
+        cp dist/LEDMatrixGenerator AppDir/usr/bin/
+        
+        cat > AppDir/LEDMatrixGenerator.desktop <<EOF
+        [Desktop Entry]
+        Type=Application
+        Name=LED Matrix Generator
+        Exec=LEDMatrixGenerator
+        Icon=LEDMatrixGenerator
+        Categories=Development;
+        EOF
+        
+        ln -s usr/bin/LEDMatrixGenerator AppDir/AppRun
+        
+        # Copiando o ícone real para o AppDir
+        cp resources/icon.png AppDir/LEDMatrixGenerator.png
+        
+        wget https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
+
+    - name: Gerar AppImage
+      run: |
+        export ARCH=x86_64
+        ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir LEDMatrixGenerator-Linux.AppImage
+
+    - name: Upload Linux Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-build
+        path: LEDMatrixGenerator-Linux.AppImage
+
+  # ==========================================
+  # 3. CRIAR RELEASE NO GITHUB
+  # ==========================================
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Release no GitHub
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: "Release ${{ github.event.inputs.version }}"
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        files: |
+          ./artifacts/windows-build/LEDMatrixGenerator-Windows.zip
+          ./artifacts/linux-build/LEDMatrixGenerator-Linux.AppImage
