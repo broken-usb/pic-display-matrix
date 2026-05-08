@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   # ==========================================
-  # 1. BUILD WINDOWS (Executável .exe com Ícone)
+  # 1. BUILD WINDOWS (Usa icon.ico)
   # ==========================================
   build-windows:
     runs-on: windows-latest
@@ -32,7 +32,8 @@ jobs:
 
     - name: Compilar Executavel
       run: |
-        pyinstaller --noconsole --onefile --collect-all customtkinter --icon="resources/icon.png" --name "LEDMatrixGenerator" main.py
+        # IMPORTANTE: Aqui usamos o arquivo .ico para as propriedades do executável
+        pyinstaller --noconsole --onefile --collect-all customtkinter --icon="resources/icon.ico" --add-data "resources/icon.png;resources" --name "LEDMatrixGenerator" main.py
 
     - name: Empacotar (.zip)
       shell: pwsh
@@ -46,7 +47,7 @@ jobs:
         path: LEDMatrixGenerator-Windows.zip
 
   # ==========================================
-  # 2. BUILD LINUX (Gera o .AppImage com Ícone)
+  # 2. BUILD LINUX (Usa icon.png)
   # ==========================================
   build-linux:
     runs-on: ubuntu-22.04 
@@ -70,7 +71,8 @@ jobs:
 
     - name: Compilar Binario com PyInstaller
       run: |
-        pyinstaller --noconsole --onefile --collect-all customtkinter --name "LEDMatrixGenerator" main.py
+        # No Linux, apenas o arquivo PNG é necessário para o AppImage
+        pyinstaller --noconsole --onefile --collect-all customtkinter --add-data "resources/icon.png:resources" --name "LEDMatrixGenerator" main.py
 
     - name: Preparar AppDir para AppImage
       run: |
@@ -87,8 +89,6 @@ jobs:
         EOF
         
         ln -s usr/bin/LEDMatrixGenerator AppDir/AppRun
-        
-        # Copiando o ícone real para o AppDir
         cp resources/icon.png AppDir/LEDMatrixGenerator.png
         
         wget https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
