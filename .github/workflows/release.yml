@@ -91,7 +91,8 @@ jobs:
         ln -s usr/bin/LEDMatrixGenerator AppDir/AppRun
         cp resources/icon.png AppDir/LEDMatrixGenerator.png
         
-        wget https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+        # AQUI ESTÁ A CORREÇÃO: Usando a release 'continuous' em vez da '13'
+        wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
 
     - name: Gerar AppImage
