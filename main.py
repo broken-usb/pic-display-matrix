@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import tkinter as tk
 
 class LEDMatrixGeneratorApp(ctk.CTk):
     """
@@ -10,8 +11,14 @@ class LEDMatrixGeneratorApp(ctk.CTk):
         
         # --- Window Configuration ---
         self.title("LED Matrix Code Generator")
-        self.geometry("650x700")
-        self.minsize(550, 650)
+        self.geometry("650x730")
+        self.minsize(550, 680)
+        
+        # Configura o ícone da janela
+        try:
+            self.iconphoto(False, tk.PhotoImage(file="resources/icon.png"))
+        except Exception:
+            pass # Ignora caso o ícone não seja encontrado durante os testes
         
         # UI Theme configuration
         ctk.set_appearance_mode("System")  
@@ -61,7 +68,7 @@ class LEDMatrixGeneratorApp(ctk.CTk):
             self.button_grid.append(button_row)
 
     def _initialize_control_panel_ui(self):
-        """Initializes the lower panel containing inputs and code output."""
+        """Initializes the lower panel containing inputs, code output, and credits."""
         self.control_panel = ctk.CTkFrame(self, corner_radius=15)
         self.control_panel.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 20))
         
@@ -104,7 +111,16 @@ class LEDMatrixGeneratorApp(ctk.CTk):
             font=("Consolas", 14), 
             corner_radius=8
         )
-        self.txt_code_output.grid(row=1, column=0, columnspan=3, padx=15, pady=(10, 15), sticky="ew")
+        self.txt_code_output.grid(row=1, column=0, columnspan=3, padx=15, pady=(10, 10), sticky="ew")
+
+        # Créditos do Ícone (CC BY 3.0)
+        self.lbl_creditos = ctk.CTkLabel(
+            self.control_panel, 
+            text="Ícone via game-icons.net - Licença CC BY 3.0", 
+            font=("Roboto", 10),
+            text_color="gray"
+        )
+        self.lbl_creditos.grid(row=2, column=0, columnspan=3, pady=(0, 10))
 
     def toggle_pixel(self, row: int, col: int):
         """Inverts the boolean state of a specific pixel and updates the UI."""
